@@ -407,9 +407,9 @@ boc.c            — entire game source (~2,400 lines, C99)
 Makefile         — cross-platform build system (Linux / macOS / Windows MinGW)
 README.md        — this file
 description.md   — itch.io store page copy
-boc_s0.bin       — save slot 0  (created on first save)
-boc_s1.bin       — save slot 1
-boc_s2.bin       — save slot 2
+boc_s0.dat       — save slot 0  (created on first save)
+boc_s1.dat       — save slot 1
+boc_s2.dat       — save slot 2
 ```
 
 ---
