@@ -391,7 +391,6 @@ build.bat        — Windows build script (produces boc.exe)
 launch.sh        — Linux/macOS launcher (opens in terminal emulator)
 launch.bat       — Windows launcher
 README.md        — this file
-description.md   — itch.io store page copy
 boc_s0.bin       — save slot 0  (created on first save)
 boc_s1.bin       — save slot 1
 boc_s2.bin       — save slot 2
