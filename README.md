@@ -1,4 +1,4 @@
-# Burden of Command — WWI Trench Management Tycoon (Extended Edition)
+# Burden of Command — WWI Trench Management Tycoon 
 
 A terminal-based strategy and management game set in the brutal conditions of World War I trench warfare. You take on the role of Captain Alistair Thorne, tasked with commanding a company through six weeks on the Western Front.
 
