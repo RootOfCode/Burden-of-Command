@@ -15,59 +15,41 @@
 
 ## Overview
 
-**Burden of Command** is a single-file terminal strategy game written in C. You play Captain Alistair Thorne of the 11th East Lancashire Regiment on the Western Front in 1917. Your objective is simple: keep your company alive and functional for six weeks while Brigade Headquarters demands the impossible from twelve miles behind the line.
+**Burden of Command** is a single-file terminal strategy game written in Common Lisp. You play Captain Alistair Thorne of the 11th East Lancashire Regiment on the Western Front in 1917. Your objective is simple: keep your company alive and functional for six weeks while Brigade Headquarters demands the impossible from twelve miles behind the line.
 
-The game runs entirely in a standard 80×24 ANSI terminal. No graphics, no sound, no dependencies beyond a C compiler.
+The game runs entirely in a standard 80×24 ANSI terminal. No graphics, no sound, no dependencies beyond SBCL.
 
 ---
 
 ## Building
 
-### Using Make (recommended)
+### Run directly (no build step required)
 
 ```bash
-make          # build release binary
-make run      # build and launch immediately
-make debug    # build with sanitisers and run
-make clean    # remove compiled files and archives
-make install  # install to /usr/local/bin  (POSIX only)
-make dist     # create source archive (.tar.gz / .zip)
-make help     # list all targets and variables
+sbcl --script boc.lisp
 ```
 
-Override the compiler or install prefix at any time:
+### Build a self-contained binary — Linux / macOS
 
 ```bash
-make CC=clang
-make install PREFIX=~/.local
+./build.sh        # produces ./boc
+./launch.sh       # open in a new terminal window
 ```
 
-### Without Make — Linux / macOS
-
-```bash
-cc -O2 -o boc boc.c && ./boc
-```
-
-### Without Make — Windows (MinGW / MSYS2 / Git Bash)
-
-```bash
-gcc -O2 -o boc.exe boc.c && ./boc.exe
-```
-
-### Without Make — Windows (MSVC Developer Command Prompt)
+### Build a self-contained binary — Windows
 
 ```bat
-cl /O2 /Fe:boc.exe boc.c
-boc.exe
+build.bat         :: produces boc.exe
+launch.bat        :: run the game
 ```
 
 ### Requirements
 
-| Platform | Compiler | Notes |
-|----------|----------|-------|
-| Linux | `cc`, `gcc`, `clang` | Any C99-capable compiler |
-| macOS | `cc`, `clang` | Ships with Xcode Command Line Tools |
-| Windows 10+ | `gcc` (MinGW/MSYS2) or MSVC 2015+ | Requires VT100-capable terminal |
+| Platform | Runtime | Notes |
+|----------|---------|-------|
+| Linux | SBCL | Available via most package managers |
+| macOS | SBCL | Available via Homebrew: `brew install sbcl` |
+| Windows 10+ | SBCL | Available at sbcl.org; requires VT100-capable terminal |
 
 **All platforms:** terminal minimum **80 columns × 24 rows**, UTF-8 character encoding.
 
@@ -403,22 +385,25 @@ Access via **Main menu → Load Game** or **ESC → Pause → Save / Load**.
 ## Files
 
 ```
-boc.c            — entire game source (~2,400 lines, C99)
-Makefile         — cross-platform build system (Linux / macOS / Windows MinGW)
+boc.lisp         — entire game source (~1,800 lines, Common Lisp)
+build.sh         — Linux/macOS build script (produces ./boc)
+build.bat        — Windows build script (produces boc.exe)
+launch.sh        — Linux/macOS launcher (opens in terminal emulator)
+launch.bat       — Windows launcher
 README.md        — this file
 description.md   — itch.io store page copy
-boc_s0.dat       — save slot 0  (created on first save)
-boc_s1.dat       — save slot 1
-boc_s2.dat       — save slot 2
+boc_s0.bin       — save slot 0  (created on first save)
+boc_s1.bin       — save slot 1
+boc_s2.bin       — save slot 2
 ```
 
 ---
 
 ## Design Notes
 
-The game is written in a deliberately **data-driven** style. All behaviour is defined in flat tables near the top of the source. To change how a task works, edit `TASK_DEFS`. To add a difficulty level, add a row to `DIFF_DEFS`. To add a random event, extend `RAND_PROBS` and add a case to `random_events()`. No behaviour is hardcoded into logic that belongs in data.
+The game is written in a deliberately **data-driven** style. All behaviour is defined in flat tables near the top of the source. To change how a task works, edit `+task-defs+`. To add a difficulty level, add a row to `+diff-defs+`. To add a random event, extend `+rand-probs+` and add a case to `random-events`. No behaviour is hardcoded into logic that belongs in data.
 
-The single-file structure is intentional. The entire game compiles with one command on Linux, macOS, and Windows. The Makefile provides convenience targets (`run`, `debug`, `install`, `dist`) but is not required to build the game.
+The single-file structure is intentional. The entire game runs with one command on Linux, macOS, and Windows. The build scripts provide convenience binaries but are not required to play the game.
 
 ---
 
