@@ -1,6 +1,6 @@
 /* ================================================================
    BURDEN OF COMMAND — A WWI Trench Management Tycoon
-   Extended Edition v4 — cross-platform C (Windows + POSIX)
+   Cross-platform C (Windows + POSIX)
 
    Linux / macOS:
      cc -O2 -o boc boc.c && ./boc
