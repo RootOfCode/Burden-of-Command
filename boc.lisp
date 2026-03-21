@@ -1919,7 +1919,7 @@
         (when (> (sq-men sq) cas)
           (decf (sq-men sq) cas) (incf (sq-men-lost sq) cas) (incf (sq-wounds sq) cas)
           (clampf (sq-mor sq) (- (truncate (* cas 6 mm))))
-          (log-msg (format nil "ARTILLERY! ~A Sq: ~D casualt~@*~[ies~;y~:;ies~], +~DW." (sq-name sq) cas cas))
+          (log-msg (format nil "ARTILLERY! ~A Sq: ~D casualt~1@*~[ies~;y~:;ies~], +~DW." (sq-name sq) cas cas))
           (when (rng-bool 0.25)
             (loop for j below (sq-notable-count sq)
                   for nb = (aref (sq-notables sq) j)
