@@ -326,7 +326,7 @@ All events scale with difficulty, aggression, and weather.
 | **Defeat** | All men dead |
 | **Mutiny** | All squads simultaneously below 5 morale |
 
----Windows
+---
 
 ## Scoring
 
@@ -387,11 +387,10 @@ Access via **Main menu → Load Game** or **ESC → Pause → Save / Load**.
 ```
 boc.lisp         — entire game source (~1,800 lines, Common Lisp)
 build.sh         — Linux/macOS build script (produces ./boc)
+build.bat        — Windows build script (produces boc.exe)
 launch.sh        — Linux/macOS launcher (opens in terminal emulator)
+launch.bat       — Windows launcher
 README.md        — this file
-boc_s0.bin       — save slot 0  (created on first save)
-boc_s1.bin       — save slot 1
-boc_s2.bin       — save slot 2
 ```
 
 ---
@@ -400,7 +399,7 @@ boc_s2.bin       — save slot 2
 
 The game is written in a deliberately **data-driven** style. All behaviour is defined in flat tables near the top of the source. To change how a task works, edit `+task-defs+`. To add a difficulty level, add a row to `+diff-defs+`. To add a random event, extend `+rand-probs+` and add a case to `random-events`. No behaviour is hardcoded into logic that belongs in data.
 
-The single-file structure is intentional. The entire game runs with one command on Linux and macOS. The build scripts provide convenience binaries but are not required to play the game.
+The single-file structure is intentional. The entire game runs with one command on Linux, macOS, and Windows. The build scripts provide convenience binaries but are not required to play the game.
 
 ---
 
