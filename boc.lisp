@@ -126,12 +126,68 @@
       (sb-alien:with-alien ((mi sb-alien:unsigned-long) (mo sb-alien:unsigned-long))
         (gc-mode% hi (sb-alien:addr mi)) (setf *orig-in-mode*  mi)
         (gc-mode% ho (sb-alien:addr mo)) (setf *orig-out-mode* mo)
-        (sc-mode% hi #x0281)             ; ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS | ENABLE_VIRTUAL_TERMINAL_INPUT
+        (sc-mode% hi #x0081)             ; ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS
         (sc-mode% ho (logior mo #x0005)) ; ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING
         (set-out-cp% 65001) (set-in-cp% 65001))))
   (defun raw-off ()
     (sc-mode% (gs-handle% +std-in+)  *orig-in-mode*)
-    (sc-mode% (gs-handle% +std-out+) *orig-out-mode*)))
+    (sc-mode% (gs-handle% +std-out+) *orig-out-mode*))
+
+  ;; ReadConsoleInputW reads raw INPUT_RECORD events from the console buffer.
+  ;; Unlike ReadFile/ReadConsole, it delivers ALL key events including Enter
+  ;; and arrow keys, and is completely unaffected by SBCL's broken (listen).
+  ;;
+  ;; INPUT_RECORD layout (20 bytes, little-endian):
+  ;;   +0   EventType         WORD  (2 bytes)
+  ;;   +2   <padding>               (2 bytes, struct alignment)
+  ;;   +4   bKeyDown          BOOL  (4 bytes)
+  ;;   +8   wRepeatCount      WORD  (2 bytes)
+  ;;   +10  wVirtualKeyCode   WORD  (2 bytes)
+  ;;   +12  wVirtualScanCode  WORD  (2 bytes)
+  ;;   +14  uChar.UnicodeChar WCHAR (2 bytes)
+  ;;   +16  dwControlKeyState DWORD (4 bytes)
+  (sb-alien:define-alien-routine ("ReadConsoleInputW" rci%)
+    sb-alien:int
+    (h   sb-alien:unsigned-long)
+    (buf (* sb-alien:unsigned-char))
+    (len sb-alien:unsigned-long)
+    (n   (* sb-alien:unsigned-long)))
+
+  (defconstant +ev-key+ 1)
+
+  (defun win-read-key ()
+    ;; Loop discarding non-key events (mouse, resize, focus, etc.) and
+    ;; key-up events; return a keyword on the first key-down event.
+    (let ((hi (gs-handle% +std-in+)))
+      (sb-alien:with-alien ((buf (sb-alien:array sb-alien:unsigned-char 20))
+                            (n   sb-alien:unsigned-long))
+        (loop
+          (rci% hi (sb-alien:cast buf (* sb-alien:unsigned-char)) 1
+                (sb-alien:addr n))
+          (let ((ev-type (logior (sb-alien:deref buf 0)
+                                 (ash (sb-alien:deref buf 1) 8)))
+                (key-dn  (logior (sb-alien:deref buf 4)
+                                 (ash (sb-alien:deref buf 5) 8)
+                                 (ash (sb-alien:deref buf 6) 16)
+                                 (ash (sb-alien:deref buf 7) 24)))
+                (vk      (logior (sb-alien:deref buf 10)
+                                 (ash (sb-alien:deref buf 11) 8)))
+                (uc      (logior (sb-alien:deref buf 14)
+                                 (ash (sb-alien:deref buf 15) 8))))
+            (when (and (= ev-type +ev-key+) (not (zerop key-dn)))
+              (return
+                (case vk
+                  (#x0D :enter)   ; VK_RETURN
+                  (#x1B :esc)     ; VK_ESCAPE
+                  (#x20 :space)   ; VK_SPACE
+                  (#x26 :up)      ; VK_UP
+                  (#x28 :down)    ; VK_DOWN
+                  (#x25 :left)    ; VK_LEFT
+                  (#x27 :right)   ; VK_RIGHT
+                  (t (if (and (>= uc 32) (< uc 127))
+                         (intern (string (char-upcase (code-char uc))) :keyword)
+                         :none))))))))))  ; end win-read-key
+  ) ; end #+win32 progn
 
 ;;; ── POSIX Raw Mode ───────────────────────────────────────────────
 #-win32
@@ -149,6 +205,12 @@
     (when *orig-termios* (sb-posix:tcsetattr 0 sb-posix:tcsanow *orig-termios*))))
 
 ;;; ── Key Reading ──────────────────────────────────────────────────
+#+win32
+(defun read-key ()
+  (finish-output)
+  (win-read-key))
+
+#-win32
 (defun read-key ()
   (finish-output)
   (let ((c (read-char *standard-input* nil :none)))
@@ -164,11 +226,7 @@
                  :esc))
            :esc))
       (#\Return
-       ;; On POSIX, drain a trailing LF (cooked-mode CR+LF) if present.
-       ;; On Windows with ENABLE_VIRTUAL_TERMINAL_INPUT, Enter sends bare CR
-       ;; and (listen) on a raw console handle can spuriously return T,
-       ;; causing read-char to block until the next keypress — skip it.
-       #-win32
+       ;; Drain a trailing LF if present (handles CR+LF from some terminals).
        (when (listen *standard-input*)
          (let ((nxt (read-char *standard-input* nil nil)))
            (unless (and nxt (char= nxt #\Newline))
@@ -2106,4 +2164,4 @@
    done)
   (cleanup))
 
-;(main)
+(main)
